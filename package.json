@@ -1,0 +1,17 @@
+{
+  "name": "smart-parking-system-for-smart-cities",
+  "version": "1.0.0",
+  "description": "Node-RED and Python simulator demo for a smart parking system.",
+  "private": true,
+  "scripts": {
+    "start": "node-red --userDir node-red --port 1880 flows.json",
+    "validate:flows": "node -e \"JSON.parse(require('fs').readFileSync('node-red/flows.json','utf8')); console.log('flows.json is valid')\""
+  },
+  "dependencies": {
+    "node-red": "^4.1.7"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

@@ -1,0 +1,396 @@
+[
+  {
+    "id": "smart-parking-flow",
+    "type": "tab",
+    "label": "Smart Parking System",
+    "disabled": false,
+    "info": "Node-RED web UI and API for the Smart Parking System for Smart Cities project."
+  },
+  {
+    "id": "http-smart-parking",
+    "type": "http in",
+    "z": "smart-parking-flow",
+    "name": "GET /smart-parking",
+    "url": "/smart-parking",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 80,
+    "wires": [
+      [
+        "set-html-headers"
+      ]
+    ]
+  },
+  {
+    "id": "set-html-headers",
+    "type": "function",
+    "z": "smart-parking-flow",
+    "name": "Set HTML headers",
+    "func": "msg.headers = { \"Content-Type\": \"text/html; charset=utf-8\" };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 370,
+    "y": 80,
+    "wires": [
+      [
+        "smart-parking-ui"
+      ]
+    ]
+  },
+  {
+    "id": "smart-parking-ui",
+    "type": "template",
+    "z": "smart-parking-flow",
+    "name": "Smart Parking Web UI",
+    "field": "payload",
+    "fieldType": "msg",
+    "format": "handlebars",
+    "syntax": "mustache",
+    "template": "<!doctype html>\n<html lang='en'>\n<head>\n<meta charset='utf-8'>\n<meta name='viewport' content='width=device-width, initial-scale=1'>\n<title>Smart Parking System</title>\n<style>\n:root{font-family:Arial,Helvetica,sans-serif;color:#16202a;background:#f5f7fb}body{margin:0}.shell{max-width:1180px;margin:0 auto;padding:24px}.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:1px solid #d9e1ea;padding-bottom:18px}.title h1{margin:0;font-size:30px;line-height:1.15}.title p{margin:8px 0 0;color:#526273}.actions{display:flex;gap:10px;flex-wrap:wrap}.button{border:0;background:#176b87;color:white;padding:10px 14px;border-radius:6px;font-weight:700;cursor:pointer}.button.secondary{background:#455a64}.button.danger{background:#b3261e}.summary{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:12px;margin:22px 0}.metric{background:white;border:1px solid #d9e1ea;border-radius:8px;padding:16px}.metric span{display:block;color:#5c6c7a;font-size:13px}.metric strong{display:block;font-size:28px;margin-top:6px}.content{display:grid;grid-template-columns:1fr 340px;gap:18px}.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.slot{background:white;border:1px solid #d9e1ea;border-left:7px solid #2e7d32;border-radius:8px;padding:14px;min-height:116px}.slot.occupied{border-left-color:#c62828}.slot.booked{border-left-color:#ef8f00}.slot h3{margin:0 0 8px;font-size:22px}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:700;text-transform:uppercase;background:#e8f5e9;color:#1b5e20}.occupied .badge{background:#ffebee;color:#b71c1c}.booked .badge{background:#fff4df;color:#8a4d00}.meta{margin-top:12px;color:#526273;font-size:13px;line-height:1.45}.panel{background:white;border:1px solid #d9e1ea;border-radius:8px;padding:16px}.panel h2{margin:0 0 12px;font-size:18px}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:13px;font-weight:700;color:#40515f}.field input,.field select{height:38px;border:1px solid #bdc8d4;border-radius:6px;padding:0 10px;font-size:14px}.log{margin-top:16px;background:#101820;color:#d6e7ef;border-radius:8px;padding:12px;min-height:140px;max-height:220px;overflow:auto;font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}.statusline{margin-top:12px;color:#526273;font-size:13px}@media(max-width:850px){.top,.content{display:block}.actions{margin-top:14px}.summary{grid-template-columns:repeat(2,1fr)}.panel{margin-top:16px}}\n</style>\n</head>\n<body>\n<main class='shell'>\n<section class='top'>\n<div class='title'><h1>Smart Parking System</h1><p>Live parking slot availability, gate counts, booking, and cancellation.</p></div>\n<div class='actions'><button class='button secondary' onclick='refreshStatus()'>Refresh</button><button class='button danger' onclick='resetSystem()'>Reset</button></div>\n</section>\n<section class='summary'>\n<div class='metric'><span>Total Slots</span><strong id='total'>0</strong></div>\n<div class='metric'><span>Available</span><strong id='available'>0</strong></div>\n<div class='metric'><span>Occupied</span><strong id='occupied'>0</strong></div>\n<div class='metric'><span>Booked</span><strong id='booked'>0</strong></div>\n<div class='metric'><span>Gate Events</span><strong id='gates'>0</strong></div>\n</section>\n<section class='content'>\n<div><div id='slots' class='slots'></div><div id='statusline' class='statusline'>Waiting for data...</div></div>\n<aside class='panel'>\n<h2>Book or Cancel Slot</h2>\n<div class='field'><label for='slot'>Slot</label><select id='slot'></select></div>\n<div class='field'><label for='vehicle'>Vehicle ID</label><input id='vehicle' value='MH15XY7890'></div>\n<div class='actions'><button class='button' onclick='bookSlot()'>Book</button><button class='button secondary' onclick='cancelSlot()'>Cancel</button></div>\n<div class='log' id='log'>Ready.</div>\n</aside>\n</section>\n</main>\n<script>\nconst api = {\n  status: '/api/parking/status',\n  book: '/api/parking/book',\n  cancel: '/api/parking/cancel',\n  reset: '/api/parking/reset'\n};\nfunction addLog(message){const log=document.getElementById('log');log.textContent='['+new Date().toLocaleTimeString()+'] '+message+'\\n'+log.textContent;}\nasync function request(url, options){const response=await fetch(url, options);const data=await response.json();if(!response.ok||data.ok===false){throw new Error(data.error||'Request failed');}return data;}\nfunction render(data){document.getElementById('total').textContent=data.total;document.getElementById('available').textContent=data.available;document.getElementById('occupied').textContent=data.occupied;document.getElementById('booked').textContent=data.booked;document.getElementById('gates').textContent=(data.entry_count||0)+(data.exit_count||0);const slots=document.getElementById('slots');const selector=document.getElementById('slot');slots.innerHTML='';selector.innerHTML='';data.slots.forEach(slot=>{const card=document.createElement('article');card.className='slot '+slot.status;card.innerHTML='<h3>'+slot.id+'</h3><span class=\"badge\">'+slot.status+'</span><div class=\"meta\">Vehicle: '+(slot.vehicle_id||'None')+'<br>Updated: '+(slot.last_updated||'Not yet')+'</div>';slots.appendChild(card);const option=document.createElement('option');option.value=slot.id;option.textContent=slot.id+' - '+slot.status;selector.appendChild(option);});document.getElementById('statusline').textContent='Last refreshed '+new Date().toLocaleTimeString()+'. Entry: '+(data.entry_count||0)+', Exit: '+(data.exit_count||0)+'.';}\nasync function refreshStatus(){try{render(await request(api.status));}catch(error){addLog(error.message);}}\nasync function bookSlot(){const payload={slot_id:document.getElementById('slot').value,vehicle_id:document.getElementById('vehicle').value||'UNKNOWN'};try{const data=await request(api.book,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});render(data.status);addLog('Booked '+payload.slot_id+' for '+payload.vehicle_id);}catch(error){addLog(error.message);}}\nasync function cancelSlot(){const payload={slot_id:document.getElementById('slot').value};try{const data=await request(api.cancel,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});render(data.status);addLog('Canceled booking for '+payload.slot_id);}catch(error){addLog(error.message);}}\nasync function resetSystem(){try{const data=await request(api.reset,{method:'POST'});render(data.status);addLog('System reset');}catch(error){addLog(error.message);}}\nrefreshStatus();setInterval(refreshStatus,3000);\n</script>\n</body>\n</html>",
+    "output": "str",
+    "x": 610,
+    "y": 80,
+    "wires": [
+      [
+        "http-response-ui"
+      ]
+    ]
+  },
+  {
+    "id": "http-response-ui",
+    "type": "http response",
+    "z": "smart-parking-flow",
+    "name": "HTML response",
+    "statusCode": "",
+    "headers": {},
+    "x": 850,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "http-status",
+    "type": "http in",
+    "z": "smart-parking-flow",
+    "name": "GET /api/parking/status",
+    "url": "/api/parking/status",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 170,
+    "wires": [
+      [
+        "status-function"
+      ]
+    ]
+  },
+  {
+    "id": "status-function",
+    "type": "function",
+    "z": "smart-parking-flow",
+    "name": "Build status response",
+    "func": "const SLOT_IDS = [\"A1\",\"A2\",\"A3\",\"A4\",\"A5\",\"A6\",\"A7\",\"A8\"];\nfunction createState(){return {entry_count:0,exit_count:0,slots:SLOT_IDS.map(id=>({id,status:\"available\",vehicle_id:\"\",last_updated:null}))};}\nfunction getState(){let state=global.get(\"parkingState\");if(!state){state=createState();global.set(\"parkingState\",state);}return state;}\nfunction summarize(state){const occupied=state.slots.filter(s=>s.status===\"occupied\").length;const booked=state.slots.filter(s=>s.status===\"booked\").length;return {total:state.slots.length,occupied,booked,available:state.slots.length-occupied-booked,entry_count:state.entry_count||0,exit_count:state.exit_count||0,slots:state.slots};}\nmsg.headers={\"Content-Type\":\"application/json\"};\nmsg.payload=summarize(getState());\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 170,
+    "wires": [
+      [
+        "http-response-status"
+      ]
+    ]
+  },
+  {
+    "id": "http-response-status",
+    "type": "http response",
+    "z": "smart-parking-flow",
+    "name": "JSON response",
+    "statusCode": "",
+    "headers": {},
+    "x": 710,
+    "y": 170,
+    "wires": []
+  },
+  {
+    "id": "http-device-event",
+    "type": "http in",
+    "z": "smart-parking-flow",
+    "name": "POST /api/parking/device-event",
+    "url": "/api/parking/device-event",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 180,
+    "y": 260,
+    "wires": [
+      [
+        "device-event-function"
+      ]
+    ]
+  },
+  {
+    "id": "device-event-function",
+    "type": "function",
+    "z": "smart-parking-flow",
+    "name": "Process device event",
+    "func": "const SLOT_IDS = [\"A1\",\"A2\",\"A3\",\"A4\",\"A5\",\"A6\",\"A7\",\"A8\"];\nfunction createState(){return {entry_count:0,exit_count:0,slots:SLOT_IDS.map(id=>({id,status:\"available\",vehicle_id:\"\",last_updated:null}))};}\nfunction getState(){let state=global.get(\"parkingState\");if(!state){state=createState();global.set(\"parkingState\",state);}return state;}\nfunction summarize(state){const occupied=state.slots.filter(s=>s.status===\"occupied\").length;const booked=state.slots.filter(s=>s.status===\"booked\").length;return {total:state.slots.length,occupied,booked,available:state.slots.length-occupied-booked,entry_count:state.entry_count||0,exit_count:state.exit_count||0,slots:state.slots};}\nfunction fail(message,code){msg.statusCode=code||400;msg.headers={\"Content-Type\":\"application/json\"};msg.payload={ok:false,error:message};return [msg,null];}\nconst event=msg.payload||{};\nif(!event.slot_id){return fail(\"slot_id is required\",400);}\nconst state=getState();\nconst slot=state.slots.find(s=>s.id===event.slot_id);\nif(!slot){return fail(\"Unknown slot: \"+event.slot_id,404);}\nconst ts=event.timestamp||new Date().toISOString();\nif(event.occupied===true){slot.status=\"occupied\";slot.vehicle_id=event.vehicle_id||\"UNKNOWN\";slot.last_updated=ts;state.entry_count=(state.entry_count||0)+1;}else if(event.occupied===false){slot.status=\"available\";slot.vehicle_id=\"\";slot.last_updated=ts;state.exit_count=(state.exit_count||0)+1;}else{return fail(\"occupied must be true or false\",400);}\nglobal.set(\"parkingState\",state);\nconst status=summarize(state);\nmsg.headers={\"Content-Type\":\"application/json\"};\nmsg.payload={ok:true,type:\"device-event\",event,status};\nconst log={type:\"device-event\",event,status,timestamp:ts};\nreturn [msg,{payload:JSON.stringify(log)+\"\\n\"}];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 260,
+    "wires": [
+      [
+        "http-response-device-event"
+      ],
+      [
+        "append-event-log"
+      ]
+    ]
+  },
+  {
+    "id": "http-response-device-event",
+    "type": "http response",
+    "z": "smart-parking-flow",
+    "name": "JSON response",
+    "statusCode": "",
+    "headers": {},
+    "x": 750,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "append-event-log",
+    "type": "file",
+    "z": "smart-parking-flow",
+    "name": "Append event log",
+    "filename": "data/parking_events.jsonl",
+    "filenameType": "str",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "false",
+    "encoding": "none",
+    "x": 750,
+    "y": 300,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "http-book",
+    "type": "http in",
+    "z": "smart-parking-flow",
+    "name": "POST /api/parking/book",
+    "url": "/api/parking/book",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 360,
+    "wires": [
+      [
+        "book-function"
+      ]
+    ]
+  },
+  {
+    "id": "book-function",
+    "type": "function",
+    "z": "smart-parking-flow",
+    "name": "Book slot",
+    "func": "const SLOT_IDS = [\"A1\",\"A2\",\"A3\",\"A4\",\"A5\",\"A6\",\"A7\",\"A8\"];\nfunction createState(){return {entry_count:0,exit_count:0,slots:SLOT_IDS.map(id=>({id,status:\"available\",vehicle_id:\"\",last_updated:null}))};}\nfunction getState(){let state=global.get(\"parkingState\");if(!state){state=createState();global.set(\"parkingState\",state);}return state;}\nfunction summarize(state){const occupied=state.slots.filter(s=>s.status===\"occupied\").length;const booked=state.slots.filter(s=>s.status===\"booked\").length;return {total:state.slots.length,occupied,booked,available:state.slots.length-occupied-booked,entry_count:state.entry_count||0,exit_count:state.exit_count||0,slots:state.slots};}\nfunction fail(message,code){msg.statusCode=code||400;msg.headers={\"Content-Type\":\"application/json\"};msg.payload={ok:false,error:message};return [msg,null];}\nconst body=msg.payload||{};\nif(!body.slot_id){return fail(\"slot_id is required\",400);}\nconst state=getState();\nconst slot=state.slots.find(s=>s.id===body.slot_id);\nif(!slot){return fail(\"Unknown slot: \"+body.slot_id,404);}\nif(slot.status!==\"available\"){return fail(\"Slot \"+slot.id+\" is not available\",409);}\nconst ts=new Date().toISOString();\nslot.status=\"booked\";slot.vehicle_id=body.vehicle_id||\"RESERVED\";slot.last_updated=ts;\nglobal.set(\"parkingState\",state);\nconst status=summarize(state);\nmsg.headers={\"Content-Type\":\"application/json\"};msg.payload={ok:true,type:\"booking\",slot_id:slot.id,status};\nconst log={type:\"booking\",slot_id:slot.id,vehicle_id:slot.vehicle_id,status,timestamp:ts};\nreturn [msg,{payload:JSON.stringify(log)+\"\\n\"}];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 360,
+    "wires": [
+      [
+        "http-response-book"
+      ],
+      [
+        "append-event-log-book"
+      ]
+    ]
+  },
+  {
+    "id": "http-response-book",
+    "type": "http response",
+    "z": "smart-parking-flow",
+    "name": "JSON response",
+    "statusCode": "",
+    "headers": {},
+    "x": 700,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "append-event-log-book",
+    "type": "file",
+    "z": "smart-parking-flow",
+    "name": "Append event log",
+    "filename": "data/parking_events.jsonl",
+    "filenameType": "str",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "false",
+    "encoding": "none",
+    "x": 710,
+    "y": 400,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "http-cancel",
+    "type": "http in",
+    "z": "smart-parking-flow",
+    "name": "POST /api/parking/cancel",
+    "url": "/api/parking/cancel",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 460,
+    "wires": [
+      [
+        "cancel-function"
+      ]
+    ]
+  },
+  {
+    "id": "cancel-function",
+    "type": "function",
+    "z": "smart-parking-flow",
+    "name": "Cancel booking",
+    "func": "const SLOT_IDS = [\"A1\",\"A2\",\"A3\",\"A4\",\"A5\",\"A6\",\"A7\",\"A8\"];\nfunction createState(){return {entry_count:0,exit_count:0,slots:SLOT_IDS.map(id=>({id,status:\"available\",vehicle_id:\"\",last_updated:null}))};}\nfunction getState(){let state=global.get(\"parkingState\");if(!state){state=createState();global.set(\"parkingState\",state);}return state;}\nfunction summarize(state){const occupied=state.slots.filter(s=>s.status===\"occupied\").length;const booked=state.slots.filter(s=>s.status===\"booked\").length;return {total:state.slots.length,occupied,booked,available:state.slots.length-occupied-booked,entry_count:state.entry_count||0,exit_count:state.exit_count||0,slots:state.slots};}\nfunction fail(message,code){msg.statusCode=code||400;msg.headers={\"Content-Type\":\"application/json\"};msg.payload={ok:false,error:message};return [msg,null];}\nconst body=msg.payload||{};\nif(!body.slot_id){return fail(\"slot_id is required\",400);}\nconst state=getState();\nconst slot=state.slots.find(s=>s.id===body.slot_id);\nif(!slot){return fail(\"Unknown slot: \"+body.slot_id,404);}\nif(slot.status!==\"booked\"){return fail(\"Slot \"+slot.id+\" is not booked\",409);}\nconst ts=new Date().toISOString();\nslot.status=\"available\";slot.vehicle_id=\"\";slot.last_updated=ts;\nglobal.set(\"parkingState\",state);\nconst status=summarize(state);\nmsg.headers={\"Content-Type\":\"application/json\"};msg.payload={ok:true,type:\"cancel\",slot_id:slot.id,status};\nconst log={type:\"cancel\",slot_id:slot.id,status,timestamp:ts};\nreturn [msg,{payload:JSON.stringify(log)+\"\\n\"}];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 460,
+    "wires": [
+      [
+        "http-response-cancel"
+      ],
+      [
+        "append-event-log-cancel"
+      ]
+    ]
+  },
+  {
+    "id": "http-response-cancel",
+    "type": "http response",
+    "z": "smart-parking-flow",
+    "name": "JSON response",
+    "statusCode": "",
+    "headers": {},
+    "x": 710,
+    "y": 440,
+    "wires": []
+  },
+  {
+    "id": "append-event-log-cancel",
+    "type": "file",
+    "z": "smart-parking-flow",
+    "name": "Append event log",
+    "filename": "data/parking_events.jsonl",
+    "filenameType": "str",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "false",
+    "encoding": "none",
+    "x": 720,
+    "y": 500,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "http-reset",
+    "type": "http in",
+    "z": "smart-parking-flow",
+    "name": "POST /api/parking/reset",
+    "url": "/api/parking/reset",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 560,
+    "wires": [
+      [
+        "reset-function"
+      ]
+    ]
+  },
+  {
+    "id": "reset-function",
+    "type": "function",
+    "z": "smart-parking-flow",
+    "name": "Reset system",
+    "func": "const SLOT_IDS = [\"A1\",\"A2\",\"A3\",\"A4\",\"A5\",\"A6\",\"A7\",\"A8\"];\nfunction createState(){return {entry_count:0,exit_count:0,slots:SLOT_IDS.map(id=>({id,status:\"available\",vehicle_id:\"\",last_updated:null}))};}\nfunction summarize(state){const occupied=state.slots.filter(s=>s.status===\"occupied\").length;const booked=state.slots.filter(s=>s.status===\"booked\").length;return {total:state.slots.length,occupied,booked,available:state.slots.length-occupied-booked,entry_count:state.entry_count||0,exit_count:state.exit_count||0,slots:state.slots};}\nconst ts=new Date().toISOString();\nconst state=createState();\nglobal.set(\"parkingState\",state);\nmsg.headers={\"Content-Type\":\"application/json\"};msg.payload={ok:true,type:\"reset\",status:summarize(state)};\nconst log={type:\"reset\",timestamp:ts,status:summarize(state)};\nreturn [msg,{payload:JSON.stringify(log)+\"\\n\"}];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 560,
+    "wires": [
+      [
+        "http-response-reset"
+      ],
+      [
+        "append-event-log-reset"
+      ]
+    ]
+  },
+  {
+    "id": "http-response-reset",
+    "type": "http response",
+    "z": "smart-parking-flow",
+    "name": "JSON response",
+    "statusCode": "",
+    "headers": {},
+    "x": 700,
+    "y": 540,
+    "wires": []
+  },
+  {
+    "id": "append-event-log-reset",
+    "type": "file",
+    "z": "smart-parking-flow",
+    "name": "Append event log",
+    "filename": "data/parking_events.jsonl",
+    "filenameType": "str",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "false",
+    "encoding": "none",
+    "x": 710,
+    "y": 600,
+    "wires": [
+      []
+    ]
+  }
+]
