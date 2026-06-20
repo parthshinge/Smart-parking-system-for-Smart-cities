@@ -1,4 +1,4 @@
-<!doctype html>
+g:\Passwords\as\Squaed\disha\app.js g:\Passwords\as\Squaed\disha\styles.css g:\Passwords\as\Squaed\disha\index.html<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -34,157 +34,260 @@
     @media (max-width: 720px) { .hero { flex-direction: column; align-items: flex-start; } }
   </style>
 </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Dashboard | Smart City Solutions</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-  <div class="container">
-    <section class="hero">
-      <div>
-        <h1>Smart Parking System</h1>
-        <p>View live parking availability, gate counts, and manage bookings from a single browser dashboard.</p>
-      </div>
-      <div>
-        <button class="button" onclick="refreshStatus()">Refresh</button>
-      </div>
-    </section>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-square-parking"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Smart Parking</h1>
+                    <p>SMART CITY IOT PLATFORM</p>
+                </div>
+            </div>
+            <div class="system-status-bar">
+                <div class="status-indicator online">
+                    <span class="pulse-dot"></span>
+                    <span class="status-label">IoT Broker: Connected</span>
+                </div>
+                <div class="status-indicator">
+                    <i class="fa-solid fa-database"></i>
+                    <span class="status-label">Cloudant DB: Syncing</span>
+                </div>
+                <div class="system-time" id="system-time">12:00:00 PM</div>
+            </div>
+        </header>
 
-    <div class="metrics">
-      <div class="metric"><span>Total slots</span><strong id="total">0</strong></div>
-      <div class="metric"><span>Available</span><strong id="available">0</strong></div>
-      <div class="metric"><span>Occupied</span><strong id="occupied">0</strong></div>
-      <div class="metric"><span>Booked</span><strong id="booked">0</strong></div>
-      <div class="metric"><span>Gate events</span><strong id="gates">0</strong></div>
+        <!-- Main Layout -->
+        <main class="dashboard-grid">
+            <!-- Left Panel: Simulator Controller -->
+            <section class="dashboard-card simulator-controls">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-sliders"></i> Hardware Simulator</h2>
+                    <p>Simulate local sensor and gate operations</p>
+                </div>
+                <div class="card-content">
+                    <div class="control-section">
+                        <h3>Entry Gate Sensor</h3>
+                        <p class="control-desc">Triggers when a vehicle arrives at the entrance barrier.</p>
+                        <button id="btn-trigger-entry" class="btn btn-primary btn-glow">
+                            <i class="fa-solid fa-car-tunnel"></i> Vehicle Arriving
+                        </button>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>Exit Gate Sensor</h3>
+                        <p class="control-desc">Triggers when a vehicle leaves the parking area.</p>
+                        <button id="btn-trigger-exit" class="btn btn-secondary">
+                            <i class="fa-solid fa-right-from-bracket"></i> Vehicle Leaving
+                        </button>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>Manual Overrides</h3>
+                        <div class="toggle-group">
+                            <div class="toggle-item">
+                                <span>Entry Barrier</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="chk-entry-gate">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Exit Barrier</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="chk-exit-gate">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-section demo-mode">
+                        <h3>Demo Controls</h3>
+                        <button id="btn-random-occupancy" class="btn btn-outline">
+                            <i class="fa-solid fa-shuffle"></i> Randomize Slot Occupancy
+                        </button>
+                        <button id="btn-clear-all" class="btn btn-danger-outline">
+                            <i class="fa-solid fa-trash-can"></i> Clear All Slots
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Middle Panel: Live Parking Visualizer -->
+            <section class="dashboard-card parking-visualizer">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-display"></i> Real-time Lot Layout</h2>
+                    <p>Live visualization of active parking slots A1 - A6</p>
+                </div>
+                <div class="card-content visualizer-content">
+                    <!-- Entrance barrier animation -->
+                    <div class="gate-status-lane entry-lane">
+                        <span class="lane-label">ENTRY LANE</span>
+                        <div class="barrier-container">
+                            <span class="barrier-label">Barrier Gate</span>
+                            <div class="barrier-arm closed" id="entry-gate-arm"></div>
+                        </div>
+                    </div>
+
+                    <!-- Slots Grid -->
+                    <div class="slots-grid">
+                        <div class="slot-item empty" id="slot-A1" data-slot="A1">
+                            <span class="slot-id">A1</span>
+                            <div class="car-avatar">
+                                <i class="fa-solid fa-car"></i>
+                            </div>
+                            <span class="slot-indicator">FREE</span>
+                        </div>
+                        <div class="slot-item empty" id="slot-A2" data-slot="A2">
+                            <span class="slot-id">A2</span>
+                            <div class="car-avatar">
+                                <i class="fa-solid fa-car"></i>
+                            </div>
+                            <span class="slot-indicator">FREE</span>
+                        </div>
+                        <div class="slot-item empty" id="slot-A3" data-slot="A3">
+                            <span class="slot-id">A3</span>
+                            <div class="car-avatar">
+                                <i class="fa-solid fa-car"></i>
+                            </div>
+                            <span class="slot-indicator">FREE</span>
+                        </div>
+                        <div class="slot-item empty" id="slot-A4" data-slot="A4">
+                            <span class="slot-id">A4</span>
+                            <div class="car-avatar">
+                                <i class="fa-solid fa-car"></i>
+                            </div>
+                            <span class="slot-indicator">FREE</span>
+                        </div>
+                        <div class="slot-item empty" id="slot-A5" data-slot="A5">
+                            <span class="slot-id">A5</span>
+                            <div class="car-avatar">
+                                <i class="fa-solid fa-car"></i>
+                            </div>
+                            <span class="slot-indicator">FREE</span>
+                        </div>
+                        <div class="slot-item empty" id="slot-A6" data-slot="A6">
+                            <span class="slot-id">A6</span>
+                            <div class="car-avatar">
+                                <i class="fa-solid fa-car"></i>
+                            </div>
+                            <span class="slot-indicator">FREE</span>
+                        </div>
+                    </div>
+
+                    <!-- Exit barrier animation -->
+                    <div class="gate-status-lane exit-lane">
+                        <span class="lane-label">EXIT LANE</span>
+                        <div class="barrier-container">
+                            <span class="barrier-label">Barrier Gate</span>
+                            <div class="barrier-arm closed" id="exit-gate-arm"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Analytics & Reservations -->
+            <div class="analytics-right-grid">
+                <!-- Analytics Card -->
+                <section class="dashboard-card analytics-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-chart-pie"></i> Lot Analytics</h2>
+                        <p>Real-time occupancy levels</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="metrics-grid">
+                            <div class="metric-box">
+                                <span class="metric-title">Available Slots</span>
+                                <span class="metric-value text-green" id="val-available-slots">6</span>
+                                <span class="metric-sub">Out of 6 slots</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-title">Occupied Slots</span>
+                                <span class="metric-value text-red" id="val-occupied-slots">0</span>
+                                <span class="metric-sub">Active parking</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-label">
+                                <span>Occupancy Rate</span>
+                                <span id="val-occupancy-rate">0%</span>
+                            </div>
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill" id="occupancy-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="metric-count-box">
+                            <div class="count-item">
+                                <span class="count-label">Total Vehicles Logged:</span>
+                                <strong id="val-total-vehicles">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Remote Booking & Controls Card -->
+                <section class="dashboard-card booking-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-envelope-open-text"></i> Remote Reservations</h2>
+                        <p>Simulate booking or cancelling from Web UI</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label for="booking-slot-select">Select Target Parking Slot:</label>
+                            <select id="booking-slot-select" class="form-control">
+                                <option value="A1">Slot A1</option>
+                                <option value="A2">Slot A2</option>
+                                <option value="A3">Slot A3</option>
+                                <option value="A4">Slot A4</option>
+                                <option value="A5">Slot A5</option>
+                                <option value="A6">Slot A6</option>
+                            </select>
+                        </div>
+                        <div class="booking-btn-group">
+                            <button id="btn-book-slot" class="btn btn-green">
+                                <i class="fa-solid fa-calendar-check"></i> Book Selected Slot
+                            </button>
+                            <button id="btn-cancel-slot" class="btn btn-danger">
+                                <i class="fa-solid fa-calendar-xmark"></i> Cancel Booking
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Live Telemetry Stream -->
+        <footer class="telemetry-log">
+            <div class="log-header">
+                <h3><i class="fa-solid fa-terminal"></i> Live Cloud IoT Activity Log</h3>
+                <span class="log-actions" id="btn-clear-logs"><i class="fa-solid fa-eraser"></i> Clear Logs</span>
+            </div>
+            <div class="log-body" id="log-stream">
+                <div class="log-line system">[SYSTEM] Dashboard initialized. Awaiting IoT Telemetry...</div>
+            </div>
+        </footer>
     </div>
 
-    <div class="slots" id="slots"></div>
-
-    <div class="panel">
-      <h2>Booking controls</h2>
-      <div class="form-row">
-        <div>
-          <label for="slot">Slot</label>
-          <select id="slot"></select>
-        </div>
-        <div>
-          <label for="vehicle">Vehicle ID</label>
-          <input id="vehicle" type="text" value="MH15XY7890" />
-        </div>
-      </div>
-      <div class="form-row">
-        <button onclick="bookSlot()">Book slot</button>
-        <button class="secondary" onclick="cancelSlot()">Cancel booking</button>
-        <button class="danger" onclick="resetSystem()">Reset</button>
-      </div>
-      <div class="log" id="log">Initializing dashboard...</div>
-    </div>
-  </div>
-
-  <script>
-    const api = {
-      status: '/api/parking/status',
-      book: '/api/parking/book',
-      cancel: '/api/parking/cancel',
-      reset: '/api/parking/reset'
-    };
-
-    function addLog(message) {
-      const log = document.getElementById('log');
-      log.textContent = `[${new Date().toLocaleTimeString()}] ${message}\n` + log.textContent;
-    }
-
-    async function request(url, options = {}) {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      if (!response.ok || data.ok === false) {
-        throw new Error(data.error || 'Request failed');
-      }
-      return data;
-    }
-
-    function render(data) {
-      document.getElementById('total').textContent = data.total;
-      document.getElementById('available').textContent = data.available;
-      document.getElementById('occupied').textContent = data.occupied;
-      document.getElementById('booked').textContent = data.booked;
-      document.getElementById('gates').textContent = (data.entry_count || 0) + (data.exit_count || 0);
-
-      const slots = document.getElementById('slots');
-      const selector = document.getElementById('slot');
-      slots.innerHTML = '';
-      selector.innerHTML = '';
-
-      data.slots.forEach(slot => {
-        const card = document.createElement('div');
-        card.className = `slot ${slot.status}`;
-        card.innerHTML = `
-          <h3>${slot.id}</h3>
-          <div class="badge ${slot.status}">${slot.status}</div>
-          <p>Vehicle: ${slot.vehicle_id || 'None'}</p>
-          <p>Updated: ${slot.last_updated || 'never'}</p>
-        `;
-        slots.appendChild(card);
-
-        const option = document.createElement('option');
-        option.value = slot.id;
-        option.textContent = `${slot.id} — ${slot.status}`;
-        selector.appendChild(option);
-      });
-
-      addLog('Status refreshed successfully.');
-    }
-
-    async function refreshStatus() {
-      try {
-        const data = await request(api.status);
-        render(data);
-      } catch (err) {
-        addLog(`Refresh failed: ${err.message}`);
-      }
-    }
-
-    async function bookSlot() {
-      const payload = {
-        slot_id: document.getElementById('slot').value,
-        vehicle_id: document.getElementById('vehicle').value || 'UNKNOWN'
-      };
-      try {
-        const data = await request(api.book, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        render(data.status);
-        addLog(`Booked ${payload.slot_id} for ${payload.vehicle_id}`);
-      } catch (err) {
-        addLog(`Booking failed: ${err.message}`);
-      }
-    }
-
-    async function cancelSlot() {
-      const payload = { slot_id: document.getElementById('slot').value };
-      try {
-        const data = await request(api.cancel, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        render(data.status);
-        addLog(`Cancelled booking for ${payload.slot_id}`);
-      } catch (err) {
-        addLog(`Cancel failed: ${err.message}`);
-      }
-    }
-
-    async function resetSystem() {
-      try {
-        const data = await request(api.reset, { method: 'POST' });
-        render(data.status);
-        addLog('System reset successful.');
-      } catch (err) {
-        addLog(`Reset failed: ${err.message}`);
-      }
-    }
-
-    refreshStatus();
-    setInterval(refreshStatus, 5000);
-  </script>
+    <!-- Script Resource -->
+    <script src="app.js"></script>
 </body>
 </html>
