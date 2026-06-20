@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Parking System</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fb; color: #1f2937; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    .hero { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 14px; margin-bottom: 18px; }
+    .hero h1 { margin: 0; font-size: 32px; }
+    .hero p { margin: 6px 0 0; color: #4b5563; max-width: 720px; }
+    .panel { background: white; border: 1px solid #d1d5db; border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .metric { padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff; }
+    .metric strong { display: block; font-size: 2rem; margin-top: 8px; }
+    .slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .slot { border-radius: 14px; padding: 16px; background: white; border: 1px solid #e5e7eb; }
+    .slot.occupied { border-color: #dc2626; }
+    .slot.booked { border-color: #ea580c; }
+    .slot.available { border-color: #15803d; }
+    .slot h3 { margin: 0 0 8px; font-size: 1.15rem; }
+    .badge { display: inline-flex; padding: 6px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+    .badge.occupied { background: #fee2e2; color: #991b1b; }
+    .badge.booked { background: #ffedd5; color: #c2410c; }
+    .badge.available { background: #dcfce7; color: #166534; }
+    .form-row { display: grid; gap: 12px; margin-top: 14px; }
+    label { display: block; font-size: 0.9rem; margin-bottom: 4px; color: #374151; }
+    input, select, button { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 1rem; }
+    button { cursor: pointer; background: #0f766e; color: white; border: 0; font-weight: 700; }
+    button.secondary { background: #475569; }
+    button.danger { background: #b91c1c; }
+    .log { background: #111827; color: #e5e7eb; min-height: 130px; border-radius: 12px; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space: pre-wrap; overflow-y: auto; }
+    @media (max-width: 720px) { .hero { flex-direction: column; align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <div>
+        <h1>Smart Parking System</h1>
+        <p>View live parking availability, gate counts, and manage bookings from a single browser dashboard.</p>
+      </div>
+      <div>
+        <button class="button" onclick="refreshStatus()">Refresh</button>
+      </div>
+    </section>
+
+    <div class="metrics">
+      <div class="metric"><span>Total slots</span><strong id="total">0</strong></div>
+      <div class="metric"><span>Available</span><strong id="available">0</strong></div>
+      <div class="metric"><span>Occupied</span><strong id="occupied">0</strong></div>
+      <div class="metric"><span>Booked</span><strong id="booked">0</strong></div>
+      <div class="metric"><span>Gate events</span><strong id="gates">0</strong></div>
+    </div>
+
+    <div class="slots" id="slots"></div>
+
+    <div class="panel">
+      <h2>Booking controls</h2>
+      <div class="form-row">
+        <div>
+          <label for="slot">Slot</label>
+          <select id="slot"></select>
+        </div>
+        <div>
+          <label for="vehicle">Vehicle ID</label>
+          <input id="vehicle" type="text" value="MH15XY7890" />
+        </div>
+      </div>
+      <div class="form-row">
+        <button onclick="bookSlot()">Book slot</button>
+        <button class="secondary" onclick="cancelSlot()">Cancel booking</button>
+        <button class="danger" onclick="resetSystem()">Reset</button>
+      </div>
+      <div class="log" id="log">Initializing dashboard...</div>
+    </div>
+  </div>
+
+  <script>
+    const api = {
+      status: '/api/parking/status',
+      book: '/api/parking/book',
+      cancel: '/api/parking/cancel',
+      reset: '/api/parking/reset'
+    };
+
+    function addLog(message) {
+      const log = document.getElementById('log');
+      log.textContent = `[${new Date().toLocaleTimeString()}] ${message}\n` + log.textContent;
+    }
+
+    async function request(url, options = {}) {
+      const response = await fetch(url, options);
+      const data = await response.json();
+      if (!response.ok || data.ok === false) {
+        throw new Error(data.error || 'Request failed');
+      }
+      return data;
+    }
+
+    function render(data) {
+      document.getElementById('total').textContent = data.total;
+      document.getElementById('available').textContent = data.available;
+      document.getElementById('occupied').textContent = data.occupied;
+      document.getElementById('booked').textContent = data.booked;
+      document.getElementById('gates').textContent = (data.entry_count || 0) + (data.exit_count || 0);
+
+      const slots = document.getElementById('slots');
+      const selector = document.getElementById('slot');
+      slots.innerHTML = '';
+      selector.innerHTML = '';
+
+      data.slots.forEach(slot => {
+        const card = document.createElement('div');
+        card.className = `slot ${slot.status}`;
+        card.innerHTML = `
+          <h3>${slot.id}</h3>
+          <div class="badge ${slot.status}">${slot.status}</div>
+          <p>Vehicle: ${slot.vehicle_id || 'None'}</p>
+          <p>Updated: ${slot.last_updated || 'never'}</p>
+        `;
+        slots.appendChild(card);
+
+        const option = document.createElement('option');
+        option.value = slot.id;
+        option.textContent = `${slot.id} — ${slot.status}`;
+        selector.appendChild(option);
+      });
+
+      addLog('Status refreshed successfully.');
+    }
+
+    async function refreshStatus() {
+      try {
+        const data = await request(api.status);
+        render(data);
+      } catch (err) {
+        addLog(`Refresh failed: ${err.message}`);
+      }
+    }
+
+    async function bookSlot() {
+      const payload = {
+        slot_id: document.getElementById('slot').value,
+        vehicle_id: document.getElementById('vehicle').value || 'UNKNOWN'
+      };
+      try {
+        const data = await request(api.book, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        render(data.status);
+        addLog(`Booked ${payload.slot_id} for ${payload.vehicle_id}`);
+      } catch (err) {
+        addLog(`Booking failed: ${err.message}`);
+      }
+    }
+
+    async function cancelSlot() {
+      const payload = { slot_id: document.getElementById('slot').value };
+      try {
+        const data = await request(api.cancel, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        render(data.status);
+        addLog(`Cancelled booking for ${payload.slot_id}`);
+      } catch (err) {
+        addLog(`Cancel failed: ${err.message}`);
+      }
+    }
+
+    async function resetSystem() {
+      try {
+        const data = await request(api.reset, { method: 'POST' });
+        render(data.status);
+        addLog('System reset successful.');
+      } catch (err) {
+        addLog(`Reset failed: ${err.message}`);
+      }
+    }
+
+    refreshStatus();
+    setInterval(refreshStatus, 5000);
+  </script>
+</body>
+</html>

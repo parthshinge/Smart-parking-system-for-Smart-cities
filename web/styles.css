@@ -1,0 +1,73 @@
+/* Professional UI styles for Smart Parking Dashboard */
+:root{
+  --bg:#0f1724; /* deep navy */
+  --card:#0b1220;
+  --muted:#94a3b8;
+  --accent:#06b6d4; /* teal */
+  --accent-2:#7c3aed; /* violet */
+  --success:#10b981;
+  --danger:#ef4444;
+  --glass: rgba(255,255,255,0.03);
+  --glass-2: rgba(255,255,255,0.02);
+  --glass-border: rgba(255,255,255,0.03);
+  --glass-strong: rgba(255,255,255,0.06);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial; margin:0;background:linear-gradient(180deg,#071124 0%, #051020 100%);color:#e6eef8}
+.app-container{max-width:1200px;margin:20px auto;padding:20px}
+.app-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid var(--glass-border);backdrop-filter: blur(6px)}
+.logo-area{display:flex;gap:12px;align-items:center}
+.logo-icon{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent-2),var(--accent));display:flex;align-items:center;justify-content:center;color:white;font-size:22px;box-shadow:0 6px 18px rgba(7,22,46,0.7)}
+.logo-text h1{margin:0;font-size:20px;letter-spacing:0.4px}
+.logo-text p{margin:0;color:var(--muted);font-size:12px}
+.system-status-bar{display:flex;gap:12px;align-items:center}
+.status-indicator{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.status-indicator.online .pulse-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(90deg,var(--accent),var(--accent-2));box-shadow:0 0 8px var(--accent);display:inline-block}
+.system-time{font-weight:600;color:var(--muted)}
+.dashboard-grid{display:grid;grid-template-columns:340px 1fr 320px;gap:18px;margin-top:18px}
+.dashboard-card{background:linear-gradient(180deg,var(--card),rgba(5,10,18,0.7));padding:14px;border-radius:12px;border:1px solid var(--glass-border);box-shadow:0 8px 30px rgba(2,6,12,0.6)}
+.card-header h2{margin:0;font-size:16px}
+.card-header p{margin:6px 0 10px;color:var(--muted);font-size:13px}
+.card-content{padding-top:6px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid transparent;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(7,22,46,0.6)}
+.btn-secondary{background:transparent;border:1px solid var(--glass-border);color:var(--muted)}
+.btn-outline{background:transparent;border:1px dashed var(--glass-border);color:var(--muted)}
+.btn-danger-outline{background:transparent;border:1px dashed rgba(239,68,68,0.18);color:var(--danger)}
+.btn-green{background:linear-gradient(90deg,var(--success),#06b981);color:#04201a}
+.btn-danger{background:linear-gradient(90deg,var(--danger),#b91c1c)}
+.control-section{margin-bottom:12px}
+.switch{position:relative;display:inline-block;width:46px;height:26px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.06);transition:.3s;border-radius:26px}
+.slider:before{position:absolute;content:'';height:20px;width:20px;left:3px;top:3px;background:white;border-radius:50%;transition:.3s}
+.switch input:checked + .slider{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.switch input:checked + .slider:before{transform:translateX(20px)}
+.visualizer-content{display:flex;flex-direction:column;gap:12px}
+.gate-status-lane{display:flex;align-items:center;gap:12px}
+.barrier-container{display:flex;flex-direction:column;align-items:flex-start}
+.barrier-arm{width:140px;height:12px;border-radius:6px;background:linear-gradient(90deg,#8da6b8, #cfeaf6);transform-origin:left center;transition:transform .5s,background .3s}
+.barrier-arm.open{transform:rotate(60deg);background:linear-gradient(90deg,var(--success),#6ee7b7)}
+.slots-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.slot-item{padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid var(--glass-border);display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.slot-id{font-weight:700}
+.car-avatar{font-size:26px;color:var(--muted)}
+.slot-indicator{padding:6px 8px;border-radius:999px;font-weight:700;font-size:12px}
+.slot-item.empty{border-color:rgba(16,185,129,0.12)}
+.slot-item.empty .slot-indicator{background:rgba(16,185,129,0.12);color:var(--success)}
+.slot-item.occupied{border-color:rgba(239,68,68,0.12)}
+.slot-item.occupied .slot-indicator{background:rgba(239,68,68,0.12);color:var(--danger)}
+.slot-item.booked{border-color:rgba(250,204,21,0.08)}
+.slot-item.booked .slot-indicator{background:rgba(250,204,21,0.08);color:#f59e0b}
+.analytics-right-grid{display:flex;flex-direction:column;gap:18px}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric-box{padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--glass-border)}
+.metric-value{font-size:18px;font-weight:800}
+.text-green{color:var(--success)}
+.text-red{color:var(--danger)}
+.progress-bar-track{height:10px;border-radius:999px;background:rgba(255,255,255,0.02);overflow:hidden;border:1px solid var(--glass-border)}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .6s}
+.telemetry-log{margin-top:18px;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));border:1px solid var(--glass-border)}
+.log-body{max-height:220px;overflow:auto; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas; font-size:13px;color:#cfeaf6}
+.log-line.system{color:var(--muted);padding:6px 0}
+@media(max-width:1024px){.dashboard-grid{grid-template-columns:1fr;}}
