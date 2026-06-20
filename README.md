@@ -44,10 +44,22 @@ Start Node-RED:
 npm start
 ```
 
-Open the web app:
+Open the built-in Node-RED UI:
 
 ```text
 http://127.0.0.1:1880/smart-parking
+```
+
+Start the standalone browser dashboard:
+
+```bash
+npm run start:web
+```
+
+Then open:
+
+```text
+http://127.0.0.1:3000
 ```
 
 In a second terminal, install Python dependencies and run the scenario simulator:
